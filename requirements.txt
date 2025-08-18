@@ -1,2 +1,15 @@
 Faker
 numpy
+# Core Data Science & Plotting
+pandas
+numpy
+scikit-learn
+matplotlib
+
+# Neo4j Database Connector
+neo4j
+
+# Deep Learning Libraries
+# NOTE: See special installation instructions for PyTorch and PyTorch Geometric below.
+torch
+torch_geometric
