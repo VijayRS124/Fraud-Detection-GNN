@@ -15,7 +15,7 @@ import os
 class Config:
     """Configuration for data loading from a specific list of files."""
     # Define the base folder where all CSVs are located
-    BASE_DATA_FOLDER = r"/dataset.csv"
+    BASE_DATA_FOLDER = r"dataset.csv"
 
     # List the exact 10 CSV filenames you want to process
     CSV_FILE_LIST = [
@@ -34,7 +34,7 @@ class Config:
     # Neo4j Credentials
     NEO4J_URI = "bolt://localhost:7687"
     NEO4J_USER = "neo4j"
-    NEO4J_PASSWORD = "Virat@45" # 👈 *** UPDATE YOUR NEO4J PASSWORD ***
+    NEO4J_PASSWORD = "vijay@123" 
 
 # ==============================================================================
 #  2. HELPER FUNCTIONS

@@ -28,10 +28,10 @@ warnings.filterwarnings("ignore", category=UserWarning)
 class Config:
     NEO4J_URI = "bolt://localhost:7687"
     NEO4J_USER = "neo4j"
-    NEO4J_PASSWORD = "Virat@45" # 👈 *** UPDATE YOUR NEO4J PASSWORD ***
+    NEO4J_PASSWORD = "vijay@123" 
     
     # Tuned Hyperparameters
-    GNN_LAYERS = 4 # <<< MODIFIED: Increased from 3 to 4 to add another hidden layer
+    GNN_LAYERS = 4 
     HIDDEN_CHANNELS = 64
     OUT_CHANNELS = 2
     LEARNING_RATE = 0.001
@@ -92,13 +92,13 @@ class FraudGNNTrainer:
         try:
             self.driver = GraphDatabase.driver(self.config.NEO4J_URI, auth=(self.config.NEO4J_USER, self.config.NEO4J_PASSWORD))
             self.driver.verify_connectivity()
-            print("✅ Successfully connected to Neo4j")
+            print("Successfully connected to Neo4j")
         except Exception as e:
-            print(f"❌ Failed to connect to Neo4j: {e}")
+            print(f"Failed to connect to Neo4j: {e}")
             raise
 
     def fetch_graph_from_neo4j(self):
-        print("\n🕸️ Fetching graph data from Neo4j (for predictive modeling)...")
+        print("\n Fetching graph data from Neo4j (for predictive modeling)...")
         with self.driver.session(database="neo4j") as session:
             nodes_result = session.run("MATCH (n) WHERE NOT 'Fraud' IN labels(n) RETURN labels(n)[0] AS nt, elementId(n) AS id, properties(n) AS p").data()
             edges_result = session.run("MATCH (n)-[r]->(m) WHERE type(r) <> 'FLAGGED_AS' RETURN labels(n)[0] AS src_t, elementId(n) AS src_id, type(r) AS rel_t, labels(m)[0] AS trg_t, elementId(m) AS trg_id").data()
@@ -114,8 +114,8 @@ class FraudGNNTrainer:
             if nt == 'transaction':
                 feature_cols = ['amount', 'timestamp', 'time_since_last_txn', 'amt_zscore', 'txn_distance']
                 features = df[feature_cols].fillna(0)
-            elif nt == 'location': features = df[['lat', 'long', 'city_pop']].fillna(0)
-            elif nt == 'merchant': features = df[['lat', 'long']].fillna(0)
+            elif nt == 'location': features = df[['lat', 'long', 'city_pop']].dropna()
+            elif nt == 'merchant': features = df[['lat', 'long']].dropna()
             else: features = pd.DataFrame(np.ones((len(df), 1)))
             data[nt].x = torch.tensor(StandardScaler().fit_transform(features.values), dtype=torch.float)
         labels = torch.zeros(len(node_mappings.get('transaction', {})), dtype=torch.long)
@@ -131,7 +131,7 @@ class FraudGNNTrainer:
             edge_index = torch.tensor([[src_id], [trg_id]], dtype=torch.long)
             if edge_type not in data.edge_types: data[edge_type].edge_index = edge_index
             else: data[edge_type].edge_index = torch.cat([data[edge_type].edge_index, edge_index], dim=1)
-        print("📊 Graph construction complete.")
+        print("Graph construction complete.")
         self.data = ToUndirected()(data)
         print(self.data)
 
@@ -172,7 +172,7 @@ class FraudGNNTrainer:
         y, train_mask = self.data['transaction'].y, self.data['transaction'].train_mask
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config.LEARNING_RATE, weight_decay=self.config.WEIGHT_DECAY)
         criterion = torch.nn.CrossEntropyLoss()
-        print("\n🚀 Starting GAT training...")
+        print("\n Starting GAT training...")
         for epoch in range(1, self.config.EPOCHS + 1):
             self.model.train()
             optimizer.zero_grad()
@@ -182,14 +182,14 @@ class FraudGNNTrainer:
             optimizer.step()
             if epoch % 20 == 0 or epoch == 1:
                 print(f'Epoch: {epoch:03d}, Loss: {loss.item():.4f}')
-        print("🏁 Training finished.")
+        print(" Training finished.")
 
         # SAVE THE TRAINED MODEL
         torch.save(self.model.state_dict(), model_save_path)
-        print(f"\n✅ Model saved to '{model_save_path}'")
+        print(f"\n Model saved to '{model_save_path}'")
         
         # EVALUATION AND THRESHOLD TUNING
-        print("📊 Evaluating model and tuning threshold...")
+        print("Evaluating model and tuning threshold...")
         self.model.eval()
         with torch.no_grad():
             out = self.model(self.data.x_dict, self.data.edge_index_dict)
@@ -227,14 +227,14 @@ class FraudGNNTrainer:
             cm = confusion_matrix(y_true, final_y_pred)
             best_metrics['confusion_matrix'] = cm.tolist()
             
-            print("\n📊 Final Evaluation Metrics (at best threshold):")
+            print("\n Final Evaluation Metrics (at best threshold):")
             print("=================================================")
             print(f"TN: {cm[0][0]} | FP: {cm[0][1]}")
             print(f"FN: {cm[1][0]} | TP: {cm[1][1]}")
             print("=================================================")
 
         # SAVE METRICS AND CURVE DATA
-        print(f"\n🏆 Best Performance (by F1-score):")
+        print(f"\n Best Performance (by F1-score):")
         print(json.dumps(best_metrics, indent=4))
         with open(metrics_save_path, 'w') as f:
             json.dump(best_metrics, f, indent=4)
